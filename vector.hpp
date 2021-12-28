@@ -162,25 +162,6 @@ const T* data() const noexcept
     return data_;
 }
 
-void push_back(const T& value)
-{
-    resizeIfRequire();
-    pushBackInternal(value);
-}
-
-void pop_back()
-{
-    --size_;
-    data_[size_].~T();
-}
-
-
-friend void swap(vector& first, vector& second) noexcept
-{   using std::swap;
-    swap(first.capacity_,     second.capacity_);
-    swap(first.size_,         second.size_);
-    swap(first.data_,         second.data_);
-}
 
 // Capacity
 size_t size() const        { return size_;};
@@ -213,6 +194,59 @@ void shrink_to_fit()
     }
     delete[] data_;
     data_ = temp;
+}
+
+
+// Modifiers
+void clear() 
+{
+    for(T* it = data_; it != data_+size_; ++it)
+    {
+        it->~T();
+    }
+
+    // std::destroy(data_, data_+size_);
+    size_ = 0;
+}
+
+
+void push_back(const T& value)
+{
+    resizeIfRequire();
+    pushBackInternal(value);
+}
+
+void pop_back()
+{
+    --size_;
+    data_[size_].~T();
+}
+
+
+friend void swap(vector& first, vector& second) noexcept
+{   using std::swap;
+    swap(first.capacity_,     second.capacity_);
+    swap(first.size_,         second.size_);
+    swap(first.data_,         second.data_);
+}
+
+void resize(size_t newSize)
+{
+    if ( newSize > capacity_)
+    {
+        capacity_ = newSize;
+            
+        T* temp = new T[capacity_];
+
+        for (size_t loop = 0; loop < size_; loop++)
+        {
+            temp[loop] = data_[loop];
+        }
+        delete[] data_;
+        data_ = temp;
+    }
+    size_ = newSize;
+    
 }
 
 

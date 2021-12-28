@@ -176,3 +176,35 @@ TEST(Vector, shouldCheckIsEmpty)
     nstd::vector<double> vector{1.2, 3.4, 5.5, 5.1};
     EXPECT_FALSE(vector.empty());
 }
+
+TEST(Vector, shouldResize)
+{
+    nstd::vector<double> vector{1.2, 3.4, 5.5, 5.1};
+
+    const size_t vectorSize = vector.size();
+    constexpr size_t newVectorSize = 10;
+    vector.resize(newVectorSize);
+
+    EXPECT_FALSE(vectorSize == vector.size());
+    EXPECT_EQ(vector.size(), newVectorSize);
+    EXPECT_EQ(vector.capacity(), newVectorSize);
+}
+
+TEST(Vector, shouldClearVector)
+{
+    nstd::vector<double> vector{1.2, 3.4, 5.5, 5.1};
+
+    size_t firstElement = vector[0];
+    size_t vectorSize = vector.size();
+    size_t vectorCapacity = vector.capacity();
+
+    vector.clear();
+
+    EXPECT_FALSE(vector.size() == vectorSize);
+    EXPECT_TRUE(vector.capacity() == vectorCapacity);
+
+    vector.push_back(555.5);
+    EXPECT_FALSE(vector[0] == firstElement);
+    EXPECT_FALSE(*vector.begin() == firstElement);
+    EXPECT_EQ(vector[0], 555.5);
+}
