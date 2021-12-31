@@ -208,3 +208,28 @@ TEST(Vector, shouldClearVector)
     EXPECT_FALSE(*vector.begin() == firstElement);
     EXPECT_EQ(vector[0], 555.5);
 }
+
+TEST(Vector, shouldEmplaceBack)
+{
+    nstd::vector<double> vector{1.2, 3.4, 5.5, 5.1};
+    size_t vectorSize = vector.size();
+
+    vector.emplace_back(7.8);
+    EXPECT_FALSE(vector.size() == vectorSize);
+
+    EXPECT_EQ(*(vector.end()-1), 7.8);
+}
+
+TEST(Vector, shouldEmplace)
+{
+    nstd::vector<double> vector{1.2, 3.4, 5.5, 5.1};
+    auto vectorSizeBefore = vector.size();
+    vector.emplace(vector.begin()+ 1, 4.4);
+    EXPECT_FALSE(*(vector.begin()+ 1) == 3.4);
+
+    EXPECT_TRUE(*(vector.begin()+ 1) == 4.4);
+    EXPECT_FALSE(vector.capacity() == vectorSizeBefore );
+}
+
+
+

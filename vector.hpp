@@ -5,6 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <memory>
+#include <utility>
 
 
 namespace nstd 
@@ -29,7 +30,7 @@ public:
 
 vector() noexcept = default;
 
-vector(size_t capacity) 
+vector(size_t capacity)
     : capacity_(capacity)
     , size_(0)
     , data_ (static_cast<T*>(::operator new(sizeof(T)* capacity_)))
@@ -73,21 +74,20 @@ vector(const std::initializer_list<T>& list)
     for (size_t loop = 0; loop < size_; loop++)
     {
         data_[size_ - 1 - loop].~T(); 
-    }
-    
+    }   
 }
 
 
-vector& operator= (const vector& copy) 
+vector& operator= (const vector<T>& copy)
 {
     swap(*this, copy);
     return *this;
 }
 
 
-vector& operator= (vector&& copy) 
+vector& operator= (vector<T>&& move) noexcept
 {
-    swap(*this, copy);
+    swap(*this, move);
     return *this;
 }
 
@@ -116,57 +116,26 @@ T& at(size_t index)
     return data_[index];
 }
 
-const T& at(size_t index) const 
-{
+const T& at(size_t index) const
+{  
     validatIndex(index);
     return data_[index];
 }
 
-T& operator[](size_t index)
-{
-    return data_[index];
-}
-
-const T& operator[](size_t index) const
-{
-    return data_[index];
-}
-
-T& front()
-{
-    return data_[0];
-}
-
-const T& front() const
-{
-    return data_[0];
-}
-
-T& back()
-{
-    return data_[size_ -1];
-}
-
-const T& back() const
-{
-    return data_[size_ -1];
-}
-
-T* data() noexcept
-{
-    return data_;
-}
-
-const T* data() const noexcept 
-{
-    return data_;
-}
+T& operator[](size_t index)                 {   return data_[index]; }
+const T& operator[](size_t index) const     {   return data_[index]; }
+T& front()                                  {   return data_[0]; }
+const T& front() const                      {   return data_[0]; }
+T& back()                                   {   return data_[size_ -1]; }
+const T& back() const                       {   return data_[size_ -1]; }
+T* data() noexcept                          {   return data_; }
+const T* data() const noexcept              {   return data_; }
 
 
 // Capacity
-size_t size() const        { return size_;};
-size_t capacity() const    { return capacity_; };
-bool empty() const         { return begin() == end(); }
+size_t size() const                         { return size_;};
+size_t capacity() const                     { return capacity_; };
+bool empty() const                          { return begin() == end(); }
 
 void reserve(size_t n)   
 {
@@ -186,38 +155,90 @@ void shrink_to_fit()
 
     capacity_ = size_;
     
-    T* temp = new T[capacity_];
-
-    for (size_t loop = 0; loop < size_; loop++)
-    {
-        temp[loop] = data_[loop];
-    }
-    delete[] data_;
-    data_ = temp;
+    reserveCapacity(capacity_);
 }
 
 
 // Modifiers
-void clear() 
+void clear()
 {
     for(T* it = data_; it != data_+size_; ++it)
     {
         it->~T();
     }
-
-    // std::destroy(data_, data_+size_);
     size_ = 0;
 }
 
+T* insert(T* pos, const T& value)
+{
+    emplace(pos, value);
+
+}
+T* insert(const T* pos, const T& value)
+{
+    emplace(pos, value);
+}
+T* insert(const T* pos, T&& value)
+{
+    emplace(pos, std::move(value));
+}
+void insert(T* pos, size_t count, const T& value);
+
+
+T* erase(const T* pos);
+T* erase(const T* first, const T* last);
+
+
+template <typename... Args> 
+T& emplace_back(Args&&... args)
+{
+    if (size_ >= capacity_ )
+    {
+        resizeIfRequire();
+    }
+    
+    data_[size_] = T(std::forward<Args>(args)...);
+    return data_[size_++];
+}
+
+template <typename... ARGS>
+T* emplace(const T* position, ARGS&&... args)
+{   
+    const auto distance = position - cbegin();
+    if (distance  == capacity_)
+    {
+        emplace_back(T(std::forward<ARGS>(args)...));
+    }
+    
+    if (size_  == capacity_)
+    {
+        resizeIfRequire();
+    }
+
+    std::move_backward(begin() + distance, end(), end() + 1);
+    
+
+    auto iter = &data_[distance];
+
+    *iter = T(std::forward<ARGS>(args)...);
+    size_++;
+    return iter;
+}
 
 void push_back(const T& value)
 {
     resizeIfRequire();
-    pushBackInternal(value);
+    new (data_ + size_) T(value);
+    ++size_;
 }
+
+// void push_back(T&& value);
 
 void pop_back()
 {
+    if (this->empty()) {
+        throw   std::out_of_range("Out of Range");
+    }
     --size_;
     data_[size_].~T();
 }
@@ -234,16 +255,7 @@ void resize(size_t newSize)
 {
     if ( newSize > capacity_)
     {
-        capacity_ = newSize;
-            
-        T* temp = new T[capacity_];
-
-        for (size_t loop = 0; loop < size_; loop++)
-        {
-            temp[loop] = data_[loop];
-        }
-        delete[] data_;
-        data_ = temp;
+        reserveCapacity(newSize);
     }
     size_ = newSize;
     
@@ -267,7 +279,7 @@ void resizeIfRequire()
 {
     if ( size_ == capacity_)
     {
-        size_t newCapacity = capacity_ * 1.5;
+        size_t newCapacity = capacity_ * 1.5 + 1;
         reserveCapacity(newCapacity);
     }
 }
