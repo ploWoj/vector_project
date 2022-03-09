@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.21)
 project(vector_project)
 
 # GoogleTest requires at least C++11
@@ -14,9 +14,10 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(vector-gt test.cpp)
-target_link_libraries(vector-gt gtest_main)
 enable_testing()
-add_test(NAME vector_test COMMAND vector-gt)
+add_executable(UT vector-gt test.cpp)
+target_link_libraries(UT gtest_main)
 
+//////////////////////////////////////
+# add_test(NAME vector_test COMMAND vector-gt)
 # add_executable(vector vector.cpp)

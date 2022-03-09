@@ -11,6 +11,8 @@
 namespace nstd 
 {
 
+template <typename T, typename U>
+concept SameType = std::is_same_v<std::remove_cvref<T>, std::remove_cvref_t<U>>;
 
 template <typename T> 
 class vector
