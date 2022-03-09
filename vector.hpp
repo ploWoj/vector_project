@@ -1,10 +1,11 @@
 #pragma once 
 
 #include <algorithm>
-#include <iterator>
 #include <iostream>
-#include <exception>
+#include <iterator>
 #include <memory>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 
@@ -14,7 +15,7 @@ namespace nstd
 template <typename T, typename U>
 concept SameType = std::is_same_v<std::remove_cvref<T>, std::remove_cvref_t<U>>;
 
-template <typename T> 
+template <typename T, typename Allocator = std::allocator<T>> 
 class vector
 {
 public:
@@ -71,12 +72,10 @@ vector(const std::initializer_list<T>& list)
 
 ~vector()
 {
-    std::unique_ptr<T, Deleter> deleter(data_, Deleter());
-
-    for (size_t loop = 0; loop < size_; loop++)
-    {
-        data_[size_ - 1 - loop].~T(); 
-    }   
+    if(front_) {
+        std::destroy_n(front_,size_);
+        all
+    }
 }
 
 
@@ -265,9 +264,10 @@ void resize(size_t newSize)
 
 
 private: 
+Allocator alloc_;
 size_t size_ {0};
 size_t capacity_{0};
-T* data_ {nullptr};
+T* front_ {nullptr};
 
 struct Deleter
 {
